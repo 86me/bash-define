@@ -4,7 +4,8 @@ bash-define
 
 This script allows for dictionary *(dictd)* lookups via the terminal.
 
-Supports multiple different databses **(define showdb)** ::
+Supports multiple different databses **(define showdb)**
+    ::
     gcide "The Collaborative International Dictionary of English v.0.48"
     wn "WordNet (r) 2.0"
     moby-thes "Moby Thesaurus II by Grady Ward, 1.0"
@@ -91,7 +92,8 @@ Prefix, suffix, substring, and regular expression matching are all supported.
 Example of regex match:
     $ define ^sub.*er$ re
 
-    Returns: ::
+    Returns:
+        ::
         23 matches found
         gcide "Subalmoner"
         gcide "Subcaliber"
