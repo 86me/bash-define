@@ -93,11 +93,10 @@ Example of regex match:
     $ define ^sub.*er$ re
 
     Returns:
-        ::
-        23 matches found
-        gcide "Subalmoner"
-        gcide "Subcaliber"
-        gcide "Subchanter"
+        |23 matches found
+        |gcide "Subalmoner"
+        |gcide "Subcaliber"
+        |gcide "Subchanter"
         gcide "Subduer"
         gcide "Subinfer"
         gcide "Subject-matter"
