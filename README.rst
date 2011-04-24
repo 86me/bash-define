@@ -1,6 +1,6 @@
-====================
-    bash-define
-====================
+===========
+bash-define
+===========
 
 This script allows for dictionary (dictd) lookups via the terminal.
 
@@ -136,6 +136,8 @@ or copy bash-define.sh to the location of your choice and call it from your ~/.b
 
 Notes
 =====
+
+Modified to work with zsh.
 
 Written by Egon Hyszczak <gone404@gmail.com>
 
