@@ -1,11 +1,9 @@
-===========
 bash-define
 ===========
 
 This script allows for dictionary *(dictd)* lookups via the terminal.
 
-Supports multiple different databses **(define showdb)**
-    ::
+Supports multiple different databses **(define showdb)**::
     gcide "The Collaborative International Dictionary of English v.0.48"
     wn "WordNet (r) 2.0"
     moby-thes "Moby Thesaurus II by Grady Ward, 1.0"
@@ -85,18 +83,18 @@ Supports multiple different databses **(define showdb)**
 
 
 Features
-========
+--------
 
 Prefix, suffix, substring, and regular expression matching are all supported.
 
 Example of regex match:
-    $ define ^sub.*er$ re
+    ``define '^sub.*er$' re``
 
-    Returns:
-        |23 matches found
-        |gcide "Subalmoner"
-        |gcide "Subcaliber"
-        |gcide "Subchanter"
+    Returns::
+        23 matches found
+        gcide "Subalmoner"
+        gcide "Subcaliber"
+        gcide "Subchanter"
         gcide "Subduer"
         gcide "Subinfer"
         gcide "Subject-matter"
@@ -120,30 +118,30 @@ Example of regex match:
 
 
 Requirements
-============
+------------
 
 Basic Unix utilities:
     head, tail, grep, sed, less, and curl
 
 
 Installation
-============
+------------
 
-Copy bash-define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with 'source bash-define.sh'
+Copy bash-define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with ``source bash-define.sh``
 
 Notes
-=====
+-----
 
 - Modified to work with zsh.
 
 - The sed commands get rid of the dictd status codes. If you know of a way to reduce redunancy please let me know!
 
-- Released under MIT liscence. 
+- Released under MIT license.
 
 - Feel free to make modification and improvements. If you do, post them to bash-define on github so I can make use of them as well.
 
-Liscense
-========
+License
+--------
 Copyright (c) 2010 Egon Hyszczak <gone404@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
