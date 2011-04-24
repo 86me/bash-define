@@ -5,11 +5,17 @@ This script allows for dictionary *(dictd)* lookups via the terminal.
 
 Supports multiple different databses **(define showdb)**::
     gcide "The Collaborative International Dictionary of English v.0.48"
+
     wn "WordNet (r) 2.0"
+
     moby-thes "Moby Thesaurus II by Grady Ward, 1.0"
+
     elements "Elements database 20001107"
+
     vera "Virtual Entity of Relevant Acronyms (Version 1.9, June 2002)"
+
     jargon "Jargon File (4.3.1, 29 Jun 2001)"
+
     foldoc "The Free On-line Dictionary of Computing (27 SEP 03)"
     easton "Easton's 1897 Bible Dictionary"
     hitchcock "Hitchcock's Bible Names Dictionary (late 1800's)"
@@ -127,7 +133,8 @@ Basic Unix utilities:
 Installation
 ------------
 
-Copy bash-define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with ``source bash-define.sh``
+Copy bash-define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with:
+    ``source bash-define.sh``
 
 Notes
 -----
