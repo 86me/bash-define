@@ -4,7 +4,7 @@ bash-define
 
 This script allows for dictionary *(dictd)* lookups via the terminal.
 
-Supports multiple different databses **(define showdb)**
+Supports multiple different databses **(define showdb)** ::
     gcide "The Collaborative International Dictionary of English v.0.48"
     wn "WordNet (r) 2.0"
     moby-thes "Moby Thesaurus II by Grady Ward, 1.0"
@@ -91,7 +91,7 @@ Prefix, suffix, substring, and regular expression matching are all supported.
 Example of regex match:
     $ define ^sub.*er$ re
 
-    Returns:
+    Returns: ::
         23 matches found
         gcide "Subalmoner"
         gcide "Subcaliber"
@@ -133,10 +133,33 @@ Copy bash-define.sh to the location of your choice and call it from your ~/.bash
 Notes
 =====
 
-Modified to work with zsh.
+- Modified to work with zsh.
 
-Written by Egon Hyszczak <gone404@gmail.com>
+- The sed commands get rid of the dictd status codes. If you know of a way to reduce redunancy please let me know!
 
-Released under MIT liscence. Feel free to make modification and improvements. If you do, post them to bash-define on github so I can make use of them as well.
+- Released under MIT liscence. 
 
-The sed commands get rid of the dictd status codes. If you know of a way to reduce redunancy please let me know!
+- Feel free to make modification and improvements. If you do, post them to bash-define on github so I can make use of them as well.
+
+Liscense
+========
+Copyright (c) 2010 Egon Hyszczak <gone404@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
