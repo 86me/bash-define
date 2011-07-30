@@ -24,16 +24,15 @@
 # THE SOFTWARE.
 
 define() {
-
     local ret
-    local lines=0
+    local ret_lines=0
     local line
     local match
     local url="dict://dictionary.bishopston.net"
     local url="dict://dict.org"
     local color
     local USE_COLOR=true
-    local HIGHLIGHT_COLOR="\x1B[0;33m"
+    local HIGHLIGHT_COLOR="\x1B[1;33m"
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
@@ -110,7 +109,7 @@ define() {
         esac
     fi
 
-    lines=$(echo "${ret}" | grep -c -)
+    ret_lines=$(echo "${ret}" | grep -c $)
 
     #If nothing returned, print error and exit.
     if [ -z "$ret" ];then
@@ -119,8 +118,8 @@ define() {
     fi
 
     #Output
-    if [ ${lines} -gt 4 ]; then
-        #Use $PAGER or less if more than 4 definitions
+    if [ ${ret_lines} -ge $LINES ]; then
+        #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
             echo "${ret}" | sed 's/\('$1'\)/'$HIGHLIGHT_COLOR'\1\x1B[0m/ig' | ${PAGER:=less -R}
         else
