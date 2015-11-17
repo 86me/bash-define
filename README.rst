@@ -12,6 +12,7 @@ Example of regex match:
     ``define '^sub.*er$' re``
 
     Returns::
+
         23 matches found  
         gcide "Subalmoner"  
         gcide "Subcaliber"  
