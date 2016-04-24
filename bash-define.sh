@@ -32,10 +32,17 @@ define() {
     local url="dict://dict.org"
     local color
     local USE_COLOR=true
-    local HIGHLIGHT_COLOR="\x1B[1;33m"
+    local HIGHLIGHT_COLOR="1;33m"
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
+    if [[ `uname` == "Darwin" ]]; then
+      local SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
+      local HIGHLIGHT_ESCAPE=$'\033['
+    else
+      local SED_FLAGS="gi"
+      local HIGHLIGHT_ESCAPE=$'\x1B['
+    fi
 
     #check for color support
     [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null && color=true || color=false
@@ -76,10 +83,14 @@ define() {
             ret="$(curl $CURL_OPTS "${url}/show:db" | tail -n +3 | head -n -2 | sed 's/^110.//')"
         else
             #Lookup word
-            ret="$(curl $CURL_OPTS "${url}/d:$1" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+            #ret="$(curl $CURL_OPTS "${url}/d:$1" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+            ret="$(curl $CURL_OPTS "${url}/d:$1"| tail -n +3)"
+            lines=`echo $ret| wc -l| sed 's/^[\t ]*//g'`
+            ret="$(echo $ret| head -n `expr $lines - 2`| sed 's/^15[0-2].//')"
         fi
     fi
 
+    #TODO: Fix relative head references for OSX
     if [ $# -eq 2 ]; then
         case "$2" in
             [Ss][Uu][Ff])
@@ -121,15 +132,15 @@ define() {
     if [ ${ret_lines} -ge $LINES ]; then
         #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
-            echo "${ret}" | sed 's/\('$1'\)/'$HIGHLIGHT_COLOR'\1\x1B[0m/ig' | ${PAGER:=less -R}
+            echo -e "${ret}" | sed 's/\('$1'\)/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
         else
-            echo "${ret}" | ${PAGER:=less -R}
+            echo -e "${ret}" | ${PAGER:=less -R}
         fi
     else
         if $color && $USE_COLOR;then
-            echo "${ret}" | sed 's/\('$1'\)/'$HIGHLIGHT_COLOR'\1\x1B[0m/ig'
+            echo -e "${ret}" | sed 's/\('$1'\)/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
         else
-            echo "${ret}"
+            echo -e "${ret}"
         fi
     fi
 
