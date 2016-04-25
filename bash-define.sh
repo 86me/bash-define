@@ -3,7 +3,7 @@
 # bash-define: Allows dictionary lookups from the terminal.
 # Any dictd server can be used in place of dict.org
 #
-# Copyright (c) 2010 Egon Hyszczak <gone404@gmail.com>
+# Copyright (c) 2016 Egon Hyszczak <egon@camperkings.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,12 @@
 # THE SOFTWARE.
 
 define() {
+
     local ret
     local ret_lines=0
     local line
     local match
-    local url="dict://dictionary.bishopston.net"
-    local url="dict://dict.org"
+    local url="dict://dict.org" #dict://dictionary.bishopston.net
     local color
     local USE_COLOR=true
     local HIGHLIGHT_COLOR="1;33m"
@@ -43,9 +43,12 @@ define() {
       local SED_FLAGS="gi"
       local HIGHLIGHT_ESCAPE=$'\x1B['
     fi
+    if [[ $(command -v gsed) >/dev/null ]]; then
+      local SED_FLAGS="gi"
+    fi
 
     #check for color support
-    [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null && color=true || color=false
+    [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && color=true || color=false
 
     _servercheck() {
         if [`nc -zv -w2 dict.org 2628`]; then
@@ -80,50 +83,64 @@ define() {
 
     if [ $# -eq 1 ]; then
         if [[ $1 == "showdb" ]]; then
-            ret="$(curl $CURL_OPTS "${url}/show:db" | tail -n +3 | head -n -2 | sed 's/^110.//')"
+            #Show databases
+            ret="$(curl $CURL_OPTS "${url}/show:db")"
         else
             #Lookup word
-            #ret="$(curl $CURL_OPTS "${url}/d:$1" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
-            ret="$(curl $CURL_OPTS "${url}/d:$1"| tail -n +3)"
-            lines=`echo $ret| wc -l| sed 's/^[\t ]*//g'`
-            ret="$(echo $ret| head -n `expr $lines - 2`| sed 's/^15[0-2].//')"
+            ret="$(curl $CURL_OPTS "${url}/d:$1")"
         fi
+
+        lines=$(echo "${ret}" | grep -c $)
+        if [[ $lines -le 4 ]]; then
+            lines=1
+        else
+            lines=`expr $lines - 4`
+        fi
+        ret="$(echo $ret | tail -n +3 | head -n $lines | sed 's/^[15][15][0-2].//')"
     fi
 
-    #TODO: Fix relative head references for OSX
     if [ $# -eq 2 ]; then
         case "$2" in
             [Ss][Uu][Ff])
                 #Match by suffix
                 match="suffix"
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
             ;;
             [Pp][Rr][Ee])
                 #Match by prefix
                 match="prefix";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
             ;;
             [Ss][Uu][Bb])
                 #Match by substring
                 match="substring";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
             ;;
             [Rr][Ee])
                 #Regular expression match
                 match="re";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
             ;;
             *)
                 #Use specific databse for lookup
-                ret="$(curl $CURL_OPTS "${url}/d:$1:$2" | tail -n +3 | head -n -2 | sed 's/^15[0-2].//')"
+                ret="$(curl $CURL_OPTS "${url}/d:$1:$2")"
+                lines=$(echo "${ret}" | grep -c $)
             ;;
         esac
+
+        lines=$(echo "${ret}" | grep -c $)
+        if [[ $lines -le 4 ]]; then
+            lines=1
+        else
+            lines=`expr $lines - 4`
+        fi
+        ret="$(echo $ret | tail -n +3 | head -n $lines | sed 's/^[15][15][0-2].//')"
     fi
 
     ret_lines=$(echo "${ret}" | grep -c $)
 
     #If nothing returned, print error and exit.
-    if [ -z "$ret" ];then
+    if [[ -z "$ret" || -n $(echo "$ret"|grep 'no match') ]];then
         echo "No results found." >&2
         return $NO_RESULTS
     fi
@@ -132,13 +149,13 @@ define() {
     if [ ${ret_lines} -ge $LINES ]; then
         #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | sed 's/\('$1'\)/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
+            echo -e "${ret}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
         else
             echo -e "${ret}" | ${PAGER:=less -R}
         fi
     else
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | sed 's/\('$1'\)/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
+            echo -e "${ret}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
         else
             echo -e "${ret}"
         fi
@@ -147,7 +164,7 @@ define() {
 }
 
 thesaurus() {
-    define $1 moby-thes
+    define $1 moby-thesaurus
 }
 
 #Tab Completion. Completes words if "/usr/share/dict/words" exists.
