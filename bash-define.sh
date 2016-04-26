@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 
 define() {
-
     local ret
     local ret_lines=0
     local head_lines=1
@@ -36,18 +35,24 @@ define() {
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
+    local SED_PROG='sed'
+    local SED_FLAGS
+    local HIGHLIGHT_ESCAPE
     if [[ `uname` == "Darwin" ]]; then
-      local SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
-      local HIGHLIGHT_ESCAPE=$'\033['
+        SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
+        HIGHLIGHT_ESCAPE=$'\033['
+
+        #Check if gnu-sed brew package is installed
+        if [[ $(command -v gsed) >/dev/null ]]; then
+            SED_PROG='gsed'
+            SED_FLAGS="gi"
+        fi
     else
-      local SED_FLAGS="gi"
-      local HIGHLIGHT_ESCAPE=$'\x1B['
-    fi
-    if [[ $(command -v gsed) >/dev/null ]]; then
-      local SED_FLAGS="gi"
+        SED_FLAGS="gi"
+        HIGHLIGHT_ESCAPE=$'\x1B['
     fi
 
-    #check for color support
+    #Check for color support
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && color=true || color=false
 
     _servercheck() {
@@ -124,7 +129,7 @@ define() {
 
     ret_lines=$(echo "${ret}" | grep -c $)
 
-    #If nothing returned, print error and exit.
+    #If nothing returned, print error and exit
     if [[ -z "$ret" || -n $(echo "$ret"|grep 'no match') ]];then
         echo "No results found." >&2
         return $NO_RESULTS
@@ -134,20 +139,19 @@ define() {
         head_lines=`expr $ret_lines - 4`
     fi
 
-    ret="$(echo $ret | tail -n +3 | head -n $head_lines | sed 's/^[15][15][0-2].//')"
+    ret="$(echo $ret | tail -n +3 | head -n $head_lines | $SED_PROG 's/^[15][15][0-2].//')"
 
     #Output
-    echo "ret_lines=$ret_lines LINES=$LINES"
     if [ ${ret_lines} -ge $LINES ]; then
         #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
+            echo -e "${ret}" | $SED_PROG 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
         else
             echo -e "${ret}" | ${PAGER:=less -R}
         fi
     else
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
+            echo -e "${ret}" | $SED_PROG 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
         else
             echo -e "${ret}"
         fi
