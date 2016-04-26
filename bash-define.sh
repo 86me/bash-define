@@ -27,7 +27,7 @@ define() {
 
     local ret
     local ret_lines=0
-    local line
+    local head_lines=1
     local match
     local url="dict://dict.org" #dict://dictionary.bishopston.net
     local color
@@ -90,13 +90,6 @@ define() {
             ret="$(curl $CURL_OPTS "${url}/d:$1")"
         fi
 
-        lines=$(echo "${ret}" | grep -c $)
-        if [[ $lines -le 4 ]]; then
-            lines=1
-        else
-            lines=`expr $lines - 4`
-        fi
-        ret="$(echo $ret | tail -n +3 | head -n $lines | sed 's/^[15][15][0-2].//')"
     fi
 
     if [ $# -eq 2 ]; then
@@ -127,14 +120,6 @@ define() {
                 lines=$(echo "${ret}" | grep -c $)
             ;;
         esac
-
-        lines=$(echo "${ret}" | grep -c $)
-        if [[ $lines -le 4 ]]; then
-            lines=1
-        else
-            lines=`expr $lines - 4`
-        fi
-        ret="$(echo $ret | tail -n +3 | head -n $lines | sed 's/^[15][15][0-2].//')"
     fi
 
     ret_lines=$(echo "${ret}" | grep -c $)
@@ -145,7 +130,14 @@ define() {
         return $NO_RESULTS
     fi
 
+    if [[ $ret_lines -gt 4 ]]; then
+        head_lines=`expr $ret_lines - 4`
+    fi
+
+    ret="$(echo $ret | tail -n +3 | head -n $head_lines | sed 's/^[15][15][0-2].//')"
+
     #Output
+    echo "ret_lines=$ret_lines LINES=$LINES"
     if [ ${ret_lines} -ge $LINES ]; then
         #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
