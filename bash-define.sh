@@ -24,35 +24,28 @@
 # THE SOFTWARE.
 
 define() {
-    local ret
-    local ret_lines=0
+    local response=""
+    local response_lines=0
     local head_lines=1
-    local match
-    local url="dict://dict.org" #dict://dictionary.bishopston.net
-    local color
+    local url="dict://dict.org" #Alternate: dict://dictionary.bishopston.net
+    local color=false
     local USE_COLOR=true
     local HIGHLIGHT_COLOR="1;33m"
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
-    local SED_PROG='sed'
-    local SED_FLAGS
-    local HIGHLIGHT_ESCAPE
     if [[ `uname` == "Darwin" ]]; then
-        SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
-        HIGHLIGHT_ESCAPE=$'\033['
-
-        #Check if gnu-sed brew package is installed
-        if [[ $(command -v gsed) >/dev/null ]]; then
-            SED_PROG='gsed'
-            SED_FLAGS="gi"
-        fi
+      local SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
+      local HIGHLIGHT_ESCAPE=$'\033['
     else
-        SED_FLAGS="gi"
-        HIGHLIGHT_ESCAPE=$'\x1B['
+      local SED_FLAGS="gi"
+      local HIGHLIGHT_ESCAPE=$'\x1B['
+    fi
+    if [[ $(command -v gsed) >/dev/null ]]; then
+      local SED_FLAGS="gi"
     fi
 
-    #Check for color support
+    # Check for color support
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && color=true || color=false
 
     _servercheck() {
@@ -79,7 +72,7 @@ define() {
             echo -e "define: error: too many arguments" >&2
             echo -e $1 $2 $3 $4
             _define_usage
-            return $BAD_ARGS
+            return ${BAD_ARGS}
         else
             _define_usage
             return 0
@@ -89,71 +82,63 @@ define() {
     if [ $# -eq 1 ]; then
         if [[ $1 == "showdb" ]]; then
             #Show databases
-            ret="$(curl $CURL_OPTS "${url}/show:db")"
+            response="$(curl ${CURL_OPTS} "${url}/show:db")"
         else
             #Lookup word
-            ret="$(curl $CURL_OPTS "${url}/d:$1")"
+            response="$(curl ${CURL_OPTS} "${url}/d:$1")"
         fi
 
     fi
 
     if [ $# -eq 2 ]; then
         case "$2" in
+          #Set match mode
             [Ss][Uu][Ff])
-                #Match by suffix
-                match="suffix"
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
+                response="$(curl ${CURL_OPTS} "${url}/m:$1::suffix")"
             ;;
             [Pp][Rr][Ee])
-                #Match by prefix
-                match="prefix";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
+                response="$(curl ${CURL_OPTS} "${url}/m:$1::prefix")"
             ;;
             [Ss][Uu][Bb])
-                #Match by substring
-                match="substring";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
+                response="$(curl ${CURL_OPTS} "${url}/m:$1::substring")"
             ;;
             [Rr][Ee])
-                #Regular expression match
-                match="re";
-                ret="$(curl $CURL_OPTS "${url}/m:$1::${match}")"
+                response="$(curl ${CURL_OPTS} "${url}/m:$1::re")"
             ;;
             *)
                 #Use specific databse for lookup
-                ret="$(curl $CURL_OPTS "${url}/d:$1:$2")"
-                lines=$(echo "${ret}" | grep -c $)
+                response="$(curl ${CURL_OPTS} "${url}/d:$1:$2")"
             ;;
         esac
     fi
 
-    ret_lines=$(echo "${ret}" | grep -c $)
+    response_lines=$(echo "${response}"| grep -c $)
 
-    #If nothing returned, print error and exit
-    if [[ -z "$ret" || -n $(echo "$ret"|grep 'no match') ]];then
+    # If nothing returned, print error and exit.
+    if [[ -z "${response}" || -n $(echo "${response}"| grep 'no match') ]];then
         echo "No results found." >&2
-        return $NO_RESULTS
+        return ${NO_RESULTS}
     fi
 
-    if [[ $ret_lines -gt 4 ]]; then
-        head_lines=`expr $ret_lines - 4`
+    if [[ $response_lines -gt 4 ]]; then
+        head_lines=`expr $response_lines - 4`
     fi
 
-    ret="$(echo $ret | tail -n +3 | head -n $head_lines | $SED_PROG 's/^[15][15][0-2].//')"
+    response="$(echo ${response} | tail -n +3 | head -n ${head_lines} | sed 's/^[15][15][0-2].//')"
 
     #Output
-    if [ ${ret_lines} -ge $LINES ]; then
+    if [ ${response_lines} -ge $LINES ]; then
         #Use $PAGER or less if results are longer than $LINES
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | $SED_PROG 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS'' | ${PAGER:=less -R}
+            echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
         else
-            echo -e "${ret}" | ${PAGER:=less -R}
+            echo -e "${response}" | ${PAGER:=less -R}
         fi
     else
         if $color && $USE_COLOR;then
-            echo -e "${ret}" | $SED_PROG 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'$SED_FLAGS''
+            echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
         else
-            echo -e "${ret}"
+            echo -e "${response}"
         fi
     fi
 
