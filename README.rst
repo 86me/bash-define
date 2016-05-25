@@ -37,8 +37,8 @@ Basic Unix utilities:
 Installation
 ------------
 
-Copy bash-define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with:
-    ``source bash-define.sh``
+Copy define.sh to the location of your choice and call it from your ~/.bashrc or ~/.zshrc file with:
+    ``source define.sh``
 
 
 Notes
@@ -131,7 +131,7 @@ Notes
 
 License
 --------
-Copyright (c) 2010 Egon Hyszczak <egon@camperkings.com>
+Copyright (c) 2010-2016 Egon Hyszczak <egon@camperkings.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
