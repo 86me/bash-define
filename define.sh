@@ -3,7 +3,7 @@
 # bash-define: Allows dictionary lookups from the terminal.
 # Any dictd server can be used in place of dict.org
 #
-# Copyright (c) 2016 Egon Hyszczak <egon@camperkings.com>
+# Copyright (c) 2016 Egon Hyszczak <egon.hyszczak@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,15 +27,15 @@ define() {
     local response=""
     local response_lines=0
     local head_lines=1
-    local url="dict://dict.org" #Alternate: dict://dictionary.bishopston.net
-    local color=false
+    local url="dict://dict.org" # Alternate: dict://dictionary.bishopston.net
+    local COLOR=false
     local USE_COLOR=true
     local HIGHLIGHT_COLOR="1;33m"
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
     if [[ `uname` == "Darwin" ]]; then
-      local SED_FLAGS="g" #OSX sed doesn't support case insensitive matching
+      local SED_FLAGS="g" # OSX sed doesn't support case insensitive matching
       local HIGHLIGHT_ESCAPE=$'\033['
     else
       local SED_FLAGS="gi"
@@ -46,11 +46,11 @@ define() {
     fi
 
     # Check for color support
-    [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && color=true || color=false
+    [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && COLOR=true || COLOR=false
 
     _servercheck() {
         if [`nc -zv -w2 dict.org 2628`]; then
-            echo "Port is down";
+            echo "Port is closed";
         else
             echo "Port is open";
         fi
@@ -68,7 +68,7 @@ define() {
     }
 
     if [ $# -eq 0 ] || [ $# -ge 3 ]; then
-        if [ $# -gt 0 ];then
+        if [ $# -gt 0 ]; then
             echo -e "define: error: too many arguments" >&2
             echo -e $1 $2 $3 $4
             _define_usage
@@ -81,10 +81,10 @@ define() {
 
     if [ $# -eq 1 ]; then
         if [[ $1 == "showdb" ]]; then
-            #Show databases
+            # Show databases
             response="$(curl ${CURL_OPTS} "${url}/show:db")"
         else
-            #Lookup word
+            # Lookup word
             response="$(curl ${CURL_OPTS} "${url}/d:$1")"
         fi
 
@@ -92,7 +92,7 @@ define() {
 
     if [ $# -eq 2 ]; then
         case "$2" in
-          #Set match mode
+          # Set match mode
             [Ss][Uu][Ff])
                 response="$(curl ${CURL_OPTS} "${url}/m:$1::suffix")"
             ;;
@@ -106,7 +106,7 @@ define() {
                 response="$(curl ${CURL_OPTS} "${url}/m:$1::re")"
             ;;
             *)
-                #Use specific databse for lookup
+                # Use specific databse for lookup
                 response="$(curl ${CURL_OPTS} "${url}/d:$1:$2")"
             ;;
         esac
@@ -115,66 +115,65 @@ define() {
     response_lines=$(echo "${response}"| grep -c $)
 
     # If nothing returned, print error and exit.
-    if [[ -z "${response}" || -n $(echo "${response}"| grep 'no match') ]];then
+    if [[ -z "${response}" || -n $(echo "${response}"| grep 'no match') ]]; then
         echo "No results found." >&2
         return ${NO_RESULTS}
     fi
 
-    if [[ $response_lines -gt 4 ]]; then
-        head_lines=`expr $response_lines - 4`
+    if [[ ${response_lines} -gt 4 ]]; then
+        head_lines=`expr ${response_lines} - 4`
     fi
 
     response="$(echo ${response} | tail -n +3 | head -n ${head_lines} | sed 's/^[15][15][0-2].//')"
 
-    #Output
-    if [ ${response_lines} -ge $LINES ]; then
-        #Use $PAGER or less if results are longer than $LINES
-        if $color && $USE_COLOR;then
+    # Output
+    if [ ${response_lines} -ge ${LINES} ]; then
+        # Use $PAGER or less if results are longer than $LINES
+        if ${COLOR} && ${USE_COLOR}; then
             echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
         else
             echo -e "${response}" | ${PAGER:=less -R}
         fi
     else
-        if $color && $USE_COLOR;then
+        if ${COLOR} && ${USE_COLOR}; then
             echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
         else
             echo -e "${response}"
         fi
     fi
-
 }
 
 thesaurus() {
     define $1 moby-thesaurus
 }
 
-#Tab Completion. Completes words if "/usr/share/dict/words" exists.
-#Otherwise just completes options.
-[ -f /usr/share/dict/words ] &&\
+# Tab Completion. Completes words if "/usr/share/dict/words" exists.
+# Otherwise just completes options.
+[ -f /usr/share/dict/words ] && \
 _define() {
     local opts="re sub suf pre"
-    if [ $COMP_CWORD -eq 1 ];then
-        if [ -f /usr/share/dict/words ];then
-            if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ];then
-                COMPREPLY=( $( grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(echo -e "showdb") ) )
+    if [ $COMP_CWORD -eq 1 ]; then
+        if [ -f /usr/share/dict/words ]; then
+            if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
+                COMPREPLY=($(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words < (echo -e "showdb")))
             else
-                COMPREPLY=( $( compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}" ) )
+                COMPREPLY=($(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}"))
             fi
         else
-            COMPREPLY=( $( compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}" ) )
+            COMPREPLY=($(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}"))
         fi
         return 0
-    elif [ $COMP_CWORD -ge 2 ];then
-        COMPREPLY=( \
-        $( compgen -W "$opts $(define showdb 2>/dev/null | awk '{print $1}' |\
-        grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}" ) )
+    elif [ $COMP_CWORD -ge 2 ]; then
+        COMPREPLY=(\
+        $(compgen -W "$opts $(define showdb 2>/dev/null | awk '{print $1}' |\
+        grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}"))
         return 0
     fi
 } && complete -F _define define
 
-[ -f /usr/share/dict/words ] &&\
+[ -f /usr/share/dict/words ] && \
 _thesaurus() {
-    COMPREPLY=( $( grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words ) )
+    COMPREPLY=($(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words))
     return 0
 } && complete -F _thesaurus thesaurus
 
