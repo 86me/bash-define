@@ -41,7 +41,7 @@ define() {
       local SED_FLAGS="gi"
       local HIGHLIGHT_ESCAPE=$'\x1B['
     fi
-    if [[ $(command -v gsed) >/dev/null ]]; then
+    if [[ $(command -v gsed) > /dev/null ]]; then
       local SED_FLAGS="gi"
     fi
 
@@ -49,7 +49,7 @@ define() {
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && COLOR=true || COLOR=false
 
     _servercheck() {
-        if [`nc -zv -w2 dict.org 2628`]; then
+        if [ `nc -zv -w2 dict.org 2628` ]; then
             echo "Port is closed";
         else
             echo "Port is open";
@@ -155,25 +155,25 @@ _define() {
     if [ $COMP_CWORD -eq 1 ]; then
         if [ -f /usr/share/dict/words ]; then
             if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
-                COMPREPLY=($(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words < (echo -e "showdb")))
+                COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(echo -e "showdb")) )
             else
-                COMPREPLY=($(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}"))
+                COMPREPLY=( $(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
             fi
         else
-            COMPREPLY=($(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}"))
+            COMPREPLY=( $(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
         fi
         return 0
     elif [ $COMP_CWORD -ge 2 ]; then
-        COMPREPLY=(\
+        COMPREPLY=( \
         $(compgen -W "$opts $(define showdb 2>/dev/null | awk '{print $1}' |\
-        grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}"))
+        grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}") )
         return 0
     fi
 } && complete -F _define define
 
 [ -f /usr/share/dict/words ] && \
 _thesaurus() {
-    COMPREPLY=($(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words))
+    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words) )
     return 0
 } && complete -F _thesaurus thesaurus
 
