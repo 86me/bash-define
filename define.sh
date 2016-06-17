@@ -34,7 +34,7 @@ define() {
     local CURL_OPTS="-s"
     local BAD_ARGS=65
     local NO_RESULTS=2
-    if [[ `uname` == "Darwin" ]]; then
+    if [[ $(uname) == "Darwin" ]]; then
       local SED_FLAGS="g" # OSX sed doesn't support case insensitive matching
       local HIGHLIGHT_ESCAPE=$'\033['
     else
@@ -49,10 +49,10 @@ define() {
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && COLOR=true || COLOR=false
 
     _servercheck() {
-        if [ `nc -zv -w2 dict.org 2628` ]; then
-            echo "Port is closed";
+        if [ $(nc -zv -w2 ${url:7} 2628 1>&/dev/null) ]; then
+            echo "Server appears to be down";
         else
-            echo "Port is open";
+            echo "Server appears to be up";
         fi
     }
 
@@ -70,7 +70,7 @@ define() {
     if [ $# -eq 0 ] || [ $# -ge 3 ]; then
         if [ $# -gt 0 ]; then
             echo -e "define: error: too many arguments" >&2
-            echo -e $1 $2 $3 $4
+            echo -e "$1 $2 $3 $4"
             _define_usage
             return ${BAD_ARGS}
         else
@@ -83,6 +83,9 @@ define() {
         if [[ $1 == "showdb" ]]; then
             # Show databases
             response="$(curl ${CURL_OPTS} "${url}/show:db")"
+        elif [[ $1 == "servercheck" ]]; then
+            _servercheck
+            return 0
         else
             # Lookup word
             response="$(curl ${CURL_OPTS} "${url}/d:$1")"
@@ -121,7 +124,7 @@ define() {
     fi
 
     if [[ ${response_lines} -gt 4 ]]; then
-        head_lines=`expr ${response_lines} - 4`
+        head_lines=$(expr ${response_lines} - 4)
     fi
 
     response="$(echo ${response} | tail -n +3 | head -n ${head_lines} | sed 's/^[15][15][0-2].//')"
@@ -157,10 +160,10 @@ _define() {
             if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
                 COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(echo -e "showdb")) )
             else
-                COMPREPLY=( $(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
+                COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
             fi
         else
-            COMPREPLY=( $(compgen -W "showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
+            COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
         fi
         return 0
     elif [ $COMP_CWORD -ge 2 ]; then
