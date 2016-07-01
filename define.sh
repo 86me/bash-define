@@ -32,7 +32,8 @@ define() {
     local USE_COLOR=true
     local HIGHLIGHT_COLOR="1;33m"
     local CURL_OPTS="-s"
-    local BAD_ARGS=65
+    local BAD_ARGS=6
+    local BAD_SERVER=9
     local NO_RESULTS=2
     if [[ $(uname) == "Darwin" ]]; then
       local SED_FLAGS="g" # OSX sed doesn't support case insensitive matching
@@ -49,10 +50,13 @@ define() {
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && COLOR=true || COLOR=false
 
     _servercheck() {
-        if [ $(nc -zv -w2 ${url:7} 2628 1>&/dev/null) ]; then
-            printf "Server appears to be down\n";
+        local servercheck="$(nc -zv -w2 ${url:7} 2628 2>&1| grep 'succeeded')"
+        if [ ${servercheck} ]; then
+            printf "${servercheck}\n"
+            return 0
         else
-            printf "Server appears to be up\n";
+            printf "Server appears to be down. Try changing \$url to a valid dict server.\n";
+            return ${BAD_SERVER}
         fi
     }
 
@@ -80,37 +84,37 @@ define() {
     fi
 
     if [ $# -eq 1 ]; then
-        if [[ $1 == "showdb" ]]; then
+        if [[ ${1} == "showdb" ]]; then
             # Show databases
             response="$(curl ${CURL_OPTS} "${url}/show:db")"
-        elif [[ $1 == "servercheck" ]]; then
+        elif [[ ${1} == "servercheck" ]]; then
             _servercheck
-            return 0
+            return $?
         else
             # Lookup word
-            response="$(curl ${CURL_OPTS} "${url}/d:$1")"
+            response="$(curl ${CURL_OPTS} "${url}/d:${1}")"
         fi
 
     fi
 
     if [ $# -eq 2 ]; then
-        case "$2" in
+        case "${2}" in
           # Set match mode
             [Ss][Uu][Ff])
-                response="$(curl ${CURL_OPTS} "${url}/m:$1::suffix")"
+                response="$(curl ${CURL_OPTS} "${url}/m:${1}::suffix")"
             ;;
             [Pp][Rr][Ee])
-                response="$(curl ${CURL_OPTS} "${url}/m:$1::prefix")"
+                response="$(curl ${CURL_OPTS} "${url}/m:${1}::prefix")"
             ;;
             [Ss][Uu][Bb])
-                response="$(curl ${CURL_OPTS} "${url}/m:$1::substring")"
+                response="$(curl ${CURL_OPTS} "${url}/m:${1}::substring")"
             ;;
             [Rr][Ee])
-                response="$(curl ${CURL_OPTS} "${url}/m:$1::re")"
+                response="$(curl ${CURL_OPTS} "${url}/m:${1}::re")"
             ;;
             *)
                 # Use specific databse for lookup
-                response="$(curl ${CURL_OPTS} "${url}/d:$1:$2")"
+                response="$(curl ${CURL_OPTS} "${url}/d:${1}:${2}")"
             ;;
         esac
     fi
@@ -133,13 +137,13 @@ define() {
     if [ ${response_lines} -ge ${LINES} ]; then
         # Use $PAGER or less if results are longer than $LINES
         if ${COLOR} && ${USE_COLOR}; then
-            printf "${response}\n" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
+            printf "${response}\n" | sed 's/\b\('${1}'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
         else
             printf "${response}\n" | ${PAGER:=less -R}
         fi
     else
         if ${COLOR} && ${USE_COLOR}; then
-            printf "${response}\n" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
+            printf "${response}\n" | sed 's/\b\('${1}'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
         else
             printf "${response}\n"
         fi
