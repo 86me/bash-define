@@ -44,9 +44,9 @@ Copy define.sh to the location of your choice and call it from your ~/.bashrc or
 Notes
 -----
 
-- Modified to work with zsh.
+- Now with sh support!
 
-- The sed commands get rid of the dictd status codes. If you know of a way to reduce redunancy please let me know!
+- Modified to work with zsh
 
 - Released under MIT license.
 

@@ -50,27 +50,27 @@ define() {
 
     _servercheck() {
         if [ $(nc -zv -w2 ${url:7} 2628 1>&/dev/null) ]; then
-            echo "Server appears to be down";
+            printf "Server appears to be down\n";
         else
-            echo "Server appears to be up";
+            printf "Server appears to be up\n";
         fi
     }
 
     _define_usage() {
-        echo -e "Usage: 'define word'" >&2
-        echo -e "Use specific database: 'define word db'" >&2
-        echo -e "Get listing of possible databases: 'define showdb'" >&2
-        echo -e "Word match: 'define word-part match-type' (suf, pre, sub, re)" >&2
-        echo -e "Suffix, prefix, substring, regular expression respectively" >&2
-        echo -e "If you use regular expression matching: define '^s.*r' re" >&2
+        printf "Usage: 'define word'\n" >&2
+        printf "Use specific database: 'define word db'\n" >&2
+        printf "Get listing of possible databases: 'define showdb'\n" >&2
+        printf "Word match: 'define word-part match-type' (suf, pre, sub, re)\n" >&2
+        printf "Suffix, prefix, substring, regular expression respectively\n" >&2
+        printf "If you use regular expression matching: define '^s.*r' re\n" >&2
         unset -f _define_usage
         return 1
     }
 
     if [ $# -eq 0 ] || [ $# -ge 3 ]; then
         if [ $# -gt 0 ]; then
-            echo -e "define: error: too many arguments" >&2
-            echo -e "$1 $2 $3 $4"
+            printf "[error] define: too many arguments\n" >&2
+            printf "${1} ${2} ${3} ${4}"
             _define_usage
             return ${BAD_ARGS}
         else
@@ -115,11 +115,11 @@ define() {
         esac
     fi
 
-    response_lines=$(echo "${response}"| grep -c $)
+    response_lines=$(printf "${response}\n"| grep -c $)
 
     # If nothing returned, print error and exit.
-    if [[ -z "${response}" || -n $(echo "${response}"| grep 'no match') ]]; then
-        echo "No results found." >&2
+    if [[ -z "${response}" || -n $(printf "${response}\n"| grep 'no match') ]]; then
+        printf "No results found.\n" >&2
         return ${NO_RESULTS}
     fi
 
@@ -127,56 +127,58 @@ define() {
         head_lines=$(expr ${response_lines} - 4)
     fi
 
-    response="$(echo ${response} | tail -n +3 | head -n ${head_lines} | sed 's/^[15][15][0-2].//')"
+    response="$(printf "${response}\n" | tail -n +3 | head -n ${head_lines} | sed 's/^[15][15][0-2].//')"
 
     # Output
     if [ ${response_lines} -ge ${LINES} ]; then
         # Use $PAGER or less if results are longer than $LINES
         if ${COLOR} && ${USE_COLOR}; then
-            echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
+            printf "${response}\n" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}'' | ${PAGER:=less -R}
         else
-            echo -e "${response}" | ${PAGER:=less -R}
+            printf "${response}\n" | ${PAGER:=less -R}
         fi
     else
         if ${COLOR} && ${USE_COLOR}; then
-            echo -e "${response}" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
+            printf "${response}\n" | sed 's/\b\('$1'\)\b/'${HIGHLIGHT_ESCAPE}${HIGHLIGHT_COLOR}'\1'${HIGHLIGHT_ESCAPE}'0m/'${SED_FLAGS}''
         else
-            echo -e "${response}"
+            printf "${response}\n"
         fi
     fi
 }
 
 thesaurus() {
-    define $1 moby-thesaurus
+    define ${1} moby-thesaurus
 }
 
-# Tab Completion. Completes words if "/usr/share/dict/words" exists.
-# Otherwise just completes options.
-[ -f /usr/share/dict/words ] && \
-_define() {
-    local opts="re sub suf pre"
-    if [ $COMP_CWORD -eq 1 ]; then
-        if [ -f /usr/share/dict/words ]; then
-            if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
-                COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(echo -e "showdb")) )
+# Check for completion support
+if [[ "${SHELL}" =~ '.*zsh$' || ${SHELL} =~ '.*bash$' ]]; then
+    # Tab Completion. Completes words if "/usr/share/dict/words" exists.
+    # Otherwise just completes options.
+    [ -f /usr/share/dict/words ] && \
+    _define() {
+        local opts="re sub suf pre"
+        if [ $COMP_CWORD -eq 1 ]; then
+            if [ -f /usr/share/dict/words ]; then
+                if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
+                    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(printf "showdb")) )
+                else
+                    COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
+                fi
             else
                 COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
             fi
-        else
-            COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
+            return 0
+        elif [ $COMP_CWORD -ge 2 ]; then
+            COMPREPLY=( \
+            $(compgen -W "$opts $(define showdb 2>/dev/null | awk '{print $1}' |\
+            grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}") )
+            return 0
         fi
-        return 0
-    elif [ $COMP_CWORD -ge 2 ]; then
-        COMPREPLY=( \
-        $(compgen -W "$opts $(define showdb 2>/dev/null | awk '{print $1}' |\
-        grep -Ev "\.|--exit--|^[0-9]*$")" -- "${COMP_WORDS[COMP_CWORD]}") )
-        return 0
-    fi
-} && complete -F _define define
+    } && complete -F _define define
 
-[ -f /usr/share/dict/words ] && \
-_thesaurus() {
-    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words) )
-    return 0
-} && complete -F _thesaurus thesaurus
-
+    [ -f /usr/share/dict/words ] && \
+    _thesaurus() {
+        COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words) )
+        return 0
+    } && complete -F _thesaurus thesaurus
+fi
