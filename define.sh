@@ -164,7 +164,8 @@ if [[ "${SHELL}" =~ '.*zsh$' || ${SHELL} =~ '.*bash$' ]]; then
         if [ $COMP_CWORD -eq 1 ]; then
             if [ -f /usr/share/dict/words ]; then
                 if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
-                    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(printf "showdb")) )
+                    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(printf "servercheck\nshowdb")) )
+                    echo "COMPREPLY=${COMPREPLY}"
                 else
                     COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
                 fi
