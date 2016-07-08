@@ -50,7 +50,7 @@ define() {
     [ -x /usr/bin/tput ] && tput setaf 1>&/dev/null && COLOR=true || COLOR=false
 
     _servercheck() {
-        local servercheck="$(nc -zv -w2 ${url:7} 2628 2>&1| grep 'succeeded')"
+        local servercheck="$(nc -zv -w2 ${url:7} 2628 2>&1| egrep '(open|succeeded)')"
         if [ ${servercheck} ]; then
             printf "${servercheck}\n"
             return 0
@@ -154,17 +154,20 @@ thesaurus() {
     define ${1} moby-thesaurus
 }
 
-# Check for completion support
+# Tab Completion. Completes words if "WORDLIST" exists.
+# Otherwise just completes options.
 if [[ "${SHELL}" =~ '.*zsh$' || ${SHELL} =~ '.*bash$' ]]; then
-    # Tab Completion. Completes words if "/usr/share/dict/words" exists.
-    # Otherwise just completes options.
     [ -f /usr/share/dict/words ] && \
+    WORDLIST="/usr/share/dict/words"
+    [ -f /usr/share/dict/cracklib-small ] && \
+    WORDLIST="/usr/share/dict/cracklib-small"
+
     _define() {
         local opts="re sub suf pre"
         if [ $COMP_CWORD -eq 1 ]; then
-            if [ -f /usr/share/dict/words ]; then
+            if [ -f ${WORDLIST} ]; then
                 if [ ${#COMP_WORDS[COMP_CWORD]} -ge 4 ]; then
-                    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words <(printf "servercheck\nshowdb")) )
+                    COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" ${WORDLIST} <(printf "servercheck\nshowdb")) )
                     echo "COMPREPLY=${COMPREPLY}"
                 else
                     COMPREPLY=( $(compgen -W "servercheck showdb" -- "${COMP_WORDS[COMP_CWORD]}") )
@@ -181,9 +184,8 @@ if [[ "${SHELL}" =~ '.*zsh$' || ${SHELL} =~ '.*bash$' ]]; then
         fi
     } && complete -F _define define
 
-    [ -f /usr/share/dict/words ] && \
     _thesaurus() {
-        COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" /usr/share/dict/words) )
+        COMPREPLY=( $(grep -h "^${COMP_WORDS[COMP_CWORD]}" ${WORDLIST}) )
         return 0
     } && complete -F _thesaurus thesaurus
 fi
